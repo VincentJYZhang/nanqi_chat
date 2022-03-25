@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <link rel="stylesheet" href="/static/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/static/css/room_2.css">
+
+    <link rel="shortcut icon" href="/static/img/favicon.ico" />
+
+    <title>南七夜谈会</title>
+</head>
+
+<body class="body-wrapper bg-dark">
+
+    <article id="msg-content" class="container-wrapper">
+
+        <div id="messages" class="messages">
+            <div class="nick-wrapper">
+                <p class="info-msg">*</p>
+            </div>
+            <div class="cut-off">&nbsp;</div>
+            <div class="content-wrapper">
+                <p class="info-msg"> 欢迎，你可以点击 <a class="room-a" href="/" style="color: antiquewhite;">南七夜话室</a> 返回主页。 </p>
+            </div>
+        </div>
+
+    </article>
+
+    <article class="container-wrapper">
+        <div class="blank_div">
+            <p>&nbsp;</p>
+            <p>&nbsp;</p>
+        </div>
+
+    </article>
+
+
+    <footer id="footer">
+
+        <div class="container-wrapper footer-wrapper">
+            <div style="height: 100%; width: 10%;float: left;">&nbsp;</div>
+            <div style="height: 100%;width: 90%;">
+                <form id="chatform" class="message" onsubmit="return false" style="height: 100%;">
+                    <fieldset style="height: 100%;">
+                        <textarea id="chatinput" type="text" autocomplete="off" autofocus=""
+                            onkeypress="onKeyPress(event)"
+                            style="background: transparent;resize: none;margin: 0 auto;width: 100%; height: 100%; float: left;overflow-y:hidden; color: #a6a28c;border: 1px solid #a6a28c"></textarea>
+                    </fieldset>
+                </form>
+            </div>
+
+        </div>
+
+    </footer>
+
+
+    <script src="/static/js/jquery.slim.min.js"></script>
+    <script src="/static/js/bootstrap.bundle.min.js"></script>
+    <script src="/static/js/socket.io.js"></script>
+
+    <script>
+
+        function bename() {
+            var name = prompt("请取一个喜欢的昵称：");
+            location.href = "" + "?name=" + encodeURI(name);
+        }
+        if ({{ has_name }} == 0) {
+            bename();
+        }
+
+        function js_encoding(string_msg) {
+            var string_msg_after = $('<span/>').text(string_msg).html();
+            return string_msg_after;
+        }
+
+        var myname = js_encoding('{{myname}}');
+        var myroom = js_encoding('{{myroom}}');
+
+
+        var socket = io.connect(location.protocol + '//' + document.domain + ':' + location.port);
+
+        socket.on('connect', function () { });
+
+        // socket.emit('join', { data: 'join' });
+
+
+        socket.on('recmessage', function (data) {
+            var username = data['username'];
+            var datetime = data['datetime'];
+            var msg = data['message'];
+            username = js_encoding(username);
+            msg = js_encoding(msg);
+            var ismymsg = 0;
+            if (username == myname) {
+                ismymsg = 1;
+            }
+            show_message(ismymsg, username, datetime, msg);
+        });
+
+        socket.on('disconnect', function () {
+            // socket = io.connect(location.protocol + '//' + document.domain + ':' + location.port);
+            // socket.emit('reconnect', {myname:myname, myroom:myroom})
+        });
+
+        socket.on('reflush', function (data) {
+            var msg = data['data'];
+            alert(msg);
+        });
+
+        socket.on('info', function (data) {
+            var msg = data['message'];
+            var datetime = data['datetime'];
+            msg = js_encoding(msg);
+            show_info(msg, datetime);
+        });
+
+        socket.on('diconnect', function () {
+            alert('连接已过期，请返回主页重新进入房间。');
+        });
+
+        // $("#chat_buttom").click(function(){
+        //     chat();
+        // });
+
+        function chat() {
+            msg = $('#chatinput').val();
+            $('#chatinput').val("");
+            if (msg) {
+                socket.emit('recmessage', { message: msg, username: myname, roomname: myroom });
+            }
+        }
+
+        function onKeyPress(event) {
+            event = event || window.event;
+            if (event.keyCode == 13) {
+                event.returnValue = false;
+                chat();
+            }
+        }
+
+
+
+        function show_message(ismymsg, username, datetime, msg) {
+            var class_style = 'user-msg';
+            if (ismymsg == 1) {
+                class_style = 'my-msg'
+            }
+            $("#msg-content").append("<div id='messages' class='messages'><div class='nick-wrapper'><p class='" + class_style + "'><a title='" + datetime + "'>" + username + "</a></p></div><div class='cut-off'>&nbsp;</div><div class='content-wrapper'><p>" + msg + "</p></div></div>");
+            window.scrollTo(0, document.body.scrollHeight);
+        }
+
+        function show_info(msg, datetime) {
+            var msg = js_encoding(msg);
+            $("#msg-content").append("<div id='messages' class='messages'><div class='nick-wrapper'><p class='info-msg'><a title='" + datetime + "'>*</a></p></div><div class='cut-off'>&nbsp;</div><div class='content-wrapper'><p class='info-msg'>" + msg + "</p></div></div>");
+            window.scrollTo(0, document.body.scrollHeight);
+        }
+
+
+        $(window).bind('unload', function () {
+            socket.emit('leave', { data: 'leave' });
+        });
+
+        // var int = self.setInterval("heart_pkg()", 5000);
+        function heart_pkg() {
+            socket.emit('heart_pkg', '', (response) => {
+            });
+        }
+
+
+    </script>
+
+
+
+
+
+</body>
+
+</html>

@@ -1,0 +1,13 @@
+{
+  "app": {
+    "secret_key": "you_should_set_your_own_key"
+  },
+  "network": {
+    "ip": "0.0.0.0",
+    "port": 8181
+  },
+  "auth": {
+    "question": "南七四教？",
+    "answer": "四合网苑"
+  }
+}
